@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useDragAndDropWithStrictMode } from './hooks/useDragAndDrop';
 import DataSample from "../public/vite.svg"
@@ -68,6 +68,7 @@ const App = () => {
             return;
         }
 
+        //reorder within a same list
         if (source.droppableId === destination.droppableId) {
             const reorderedItems = reorder(
                 source.droppableId === 'droppable' ? items : selected,
@@ -77,7 +78,9 @@ const App = () => {
             source.droppableId === 'droppable'
                 ? setItems(reorderedItems)
                 : setSelected(reorderedItems);
-        } else {
+        }
+        //drop to new list
+        else {
             const result = move(
                 source.droppableId === 'droppable' ? items : selected,
                 source.droppableId === 'droppable' ? selected : items,
@@ -99,15 +102,15 @@ const App = () => {
                     <Droppable
                         droppableId="droppable"
                         isDropDisabled={true}
-                        renderClone={(provided, snapshot, rubric) => (
-                            <div
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                ref={provided.innerRef}
-                            >
-                                Item id: {items[rubric.source.index].id}
-                            </div>
-                        )}
+                    // renderClone={(provided, snapshot, rubric) => (
+                    //     <div
+                    //         {...provided.draggableProps}
+                    //         {...provided.dragHandleProps}
+                    //         ref={provided.innerRef}
+                    //     >
+                    //         Item id: {items[rubric.source.index].id}
+                    //     </div>
+                    // )}
                     >
                         {(provided, snapshot) => (
                             <div
@@ -119,16 +122,26 @@ const App = () => {
                                         draggableId={item.id}
                                         index={index}>
                                         {(provided, snapshot) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                                style={getItemStyle(
-                                                    snapshot.isDragging,
-                                                    provided.draggableProps.style
-                                                )}>
-                                                {item.content}
-                                            </div>
+                                            <Fragment>
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    {...provided.dragHandleProps}
+                                                    style={getItemStyle(
+                                                        snapshot.isDragging,
+                                                        provided.draggableProps.style
+                                                    )}>
+                                                    {item.content}
+                                                </div>
+                                                {snapshot.isDragging && (
+                                                    <div style={{
+                                                        userSelect: 'none',
+                                                        padding: grid * 2,
+                                                        margin: `0 0 ${grid}px 0`,
+                                                        background: 'grey',
+                                                    }}>{item.content}</div>
+                                                )}
+                                            </Fragment>
                                         )}
                                     </Draggable>
                                 ))}
