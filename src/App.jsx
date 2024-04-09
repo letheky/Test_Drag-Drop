@@ -1,16 +1,15 @@
 import React, { Fragment, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useDragAndDropWithStrictMode } from './hooks/useDragAndDrop';
-import DataSample from "../public/vite.svg"
+import { v4 as uuid } from "uuid"
 
 // Fake data generator
-const getItems = (count, offset = 0) =>
-    Array.from({ length: count }, (_, index) => ({
-        id: `item-${index + offset}`,
-        content: `item ${index + offset}`
+const getItems = (count) =>
+    Array.from({ length: count }, () => ({
+        id: `item-${uuid()}`,
+        content: `item ${uuid()}`
     }));
 
-// A little function to help with reordering the result
 const reorder = (list, startIndex, endIndex) => {
     const result = Array.from(list);
     const [removed] = result.splice(startIndex, 1);
@@ -18,17 +17,13 @@ const reorder = (list, startIndex, endIndex) => {
     return result;
 };
 
-// Moves an item from one list to another list
-const move = (source, destination, droppableSource, droppableDestination) => {
+const copy = (source, destination, droppableSource, droppableDestination) => {
     const sourceClone = Array.from(source);
     const destClone = Array.from(destination);
-    const [removed] = sourceClone.splice(droppableSource.index, 1);
-    destClone.splice(droppableDestination.index, 0, removed);
+    const item = sourceClone[droppableSource.index];
 
-    const result = {};
-    result[droppableSource.droppableId] = sourceClone;
-    result[droppableDestination.droppableId] = destClone;
-    return result;
+    destClone.splice(droppableDestination.index, 0, { ...item, id: uuid() });
+    return destClone;
 };
 
 const grid = 8;
@@ -53,8 +48,30 @@ const getListStyle = isDraggingOver => ({
 });
 
 const App = () => {
-    const [items, setItems] = useState(getItems(10));
-    const [selected, setSelected] = useState(getItems(5, 10));
+    const ITEMS = [
+        {
+            id: uuid(),
+            content: 'Headline'
+        },
+        {
+            id: uuid(),
+            content: 'Copy'
+        },
+        {
+            id: uuid(),
+            content: 'Image'
+        },
+        {
+            id: uuid(),
+            content: 'Slideshow'
+        },
+        {
+            id: uuid(),
+            content: 'Quote'
+        }
+    ];
+
+    const [selected, setSelected] = useState(getItems(5));
 
     // Using your custom hook
     const { isDragAndDropEnabled } = useDragAndDropWithStrictMode();
@@ -68,55 +85,39 @@ const App = () => {
             return;
         }
 
-        //reorder within a same list
-        if (source.droppableId === destination.droppableId) {
-            const reorderedItems = reorder(
-                source.droppableId === 'droppable' ? items : selected,
-                source.index,
-                destination.index
-            );
-            source.droppableId === 'droppable'
-                ? setItems(reorderedItems)
-                : setSelected(reorderedItems);
-        }
-        //drop to new list
-        else {
-            const result = move(
-                source.droppableId === 'droppable' ? items : selected,
-                source.droppableId === 'droppable' ? selected : items,
-                source,
-                destination
-            );
-            setItems(result.droppable);
-            setSelected(result.droppable2);
+        switch (source.droppableId) {
+            case destination.droppableId:
+                if (source.droppableId === 'ITEMS') return
+                else {
+                    const reorderedItems =
+                        reorder(selected, source.index, destination.index);
+                    setSelected(reorderedItems);
+                    break;
+                }
+            case 'ITEMS':
+                setSelected(copy(
+                    ITEMS,
+                    selected,
+                    source,
+                    destination
+                ));
+                break;
         }
     };
-    const Clone = () => {
-        return (<img src={DataSample} alt="Cloned component" />)
-    }
 
     return (
         <DragDropContext onDragEnd={onDragEnd}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '10px' }}>
                 {isDragAndDropEnabled ? (
                     <Droppable
-                        droppableId="droppable"
+                        droppableId="ITEMS"
                         isDropDisabled={true}
-                    // renderClone={(provided, snapshot, rubric) => (
-                    //     <div
-                    //         {...provided.draggableProps}
-                    //         {...provided.dragHandleProps}
-                    //         ref={provided.innerRef}
-                    //     >
-                    //         Item id: {items[rubric.source.index].id}
-                    //     </div>
-                    // )}
                     >
                         {(provided, snapshot) => (
                             <div
                                 ref={provided.innerRef}
                                 style={getListStyle(snapshot.isDraggingOver)}>
-                                {items.map((item, index) => (
+                                {ITEMS.map((item, index) => (
                                     <Draggable
                                         key={item.id}
                                         draggableId={item.id}
