@@ -71,6 +71,7 @@ const App = () => {
         }
     ];
 
+    
     const [selected, setSelected] = useState(getItems(5));
 
     // Using your custom hook
